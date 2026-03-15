@@ -1,0 +1,17 @@
+# Java / Maven
+backend/target/
+backend/.idea/
+backend/*.iml
+
+# Node / React
+frontend/node_modules/
+frontend/dist/
+frontend/.eslintcache
+
+# OS / IDE
+.DS_Store
+.vscode/
+*.swp
+
+# Docker
+postgres_data/
