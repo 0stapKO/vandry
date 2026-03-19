@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const LoginPage = () => {
   // State for our form fields
@@ -62,7 +63,7 @@ const LoginPage = () => {
             </button>
           </form>
          <p className="text-sm pt-4 text-gray-800 text-center">
-            New here? Try to <a className="text-blue-600 underline" href='/register'>Sign up</a></p>
+            New here? Try to <Link className="text-blue-600 underline" to='/register'>Sign up</Link></p>
         </div>
       </div>
     </div>

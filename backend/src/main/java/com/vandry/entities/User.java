@@ -21,12 +21,15 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(nullable = false, unique = true)
+    private String username;
+
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(25) default 'USER'")
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Role role = Role.USER;
 
     @ManyToMany(mappedBy = "collaborators")
     private Set<Route> sharedRoutes = new HashSet<>();

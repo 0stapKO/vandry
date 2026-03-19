@@ -1,4 +1,6 @@
 import React, {useState} from 'react';
+import { Link } from 'react-router-dom';
+import { authService } from '../api/authService';
 
 const RegisterPage = () => {
     const [email, setEmail] = useState('');
@@ -13,7 +15,22 @@ const RegisterPage = () => {
             return;
         }
 
-        console.log("Дані готові до відправки на Spring Boot:", { email, password, confirmPassword, username });
+        if (password !== confirmPassword) {
+            alert("Паролі не збігаються!");
+            return;
+        }
+
+        console.log("Дані готові до відправки на Spring Boot:", { email, password, username });
+
+        authService.register({ email, password, username })
+            .then(response => {
+                console.log("Успішна реєстрація:", response);
+                
+            })
+            .catch(error => {
+                console.error("Помилка реєстрації:", error.response?.data || error.message);
+                alert("Помилка реєстрації. Спробуйте ще раз.");
+            });
     }
 
     return (
@@ -83,7 +100,7 @@ const RegisterPage = () => {
             </button>
           </form>
            <p className="text-sm pt-4 text-gray-800 text-center"
-           >Already have an account? Try to <a className="text-blue-600 underline" href='/login'>Sign in</a></p>
+           >Already have an account? Try to <Link className="text-blue-600 underline" to='/login'>Sign in</Link></p>
         </div>
       </div>
     </div>
