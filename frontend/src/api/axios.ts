@@ -8,4 +8,35 @@ const api = axios.create({
     },
 });
 
+api.interceptors.request.use(
+  (config) => {
+    // 1. Look for the token in localStorage
+    const token = localStorage.getItem('token');
+
+    // 2. If the token exists, add it to the Authorization header
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    // Handle request errors
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // If the token is invalid or expired, log out the user
+      console.warn('Session expired. Redirecting to login...');
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { isAxiosError } from 'axios';
+import api from '../api/axios'; // Імпортуй свій налаштований axios
 
 const LoginPage = () => {
-  // State for our form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate(); // Хук для перенаправлення
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
   
     if (!email || !password) {
@@ -14,7 +16,28 @@ const LoginPage = () => {
       return;
     }
 
-    console.log("Дані готові до відправки на Spring Boot:", { email, password });
+    try {
+      // 1. Відправляємо запит на логін
+      const response = await api.post('/auth/login', { email, password });
+      
+      // 2. Отримуємо токен з відповіді (AuthResponse)
+      const token = response.data.token;
+      
+      // 3. Зберігаємо токен у LocalStorage
+      localStorage.setItem('token', token);
+      
+      console.log("Токен збережено успішно!");
+
+      // 4. Перекидаємо користувача на дашборд (або головну)
+      navigate('/dashboard'); 
+      
+    } catch (error: unknown) {
+      // Виводимо конкретну помилку від Spring ("Невірний пароль" тощо)
+      const message = isAxiosError<string>(error)
+        ? error.response?.data || "Помилка входу. Перевірте дані."
+        : "Помилка входу. Перевірте дані.";
+      alert(message);
+    }
   };
 
   return (
