@@ -29,7 +29,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    const status = error.response?.status;
+    const requestUrl: string = error.config?.url || '';
+    const isAuthRequest =
+      requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+
+    if (status === 401 && !isAuthRequest) {
       // If the token is invalid or expired, log out the user
       console.warn('Session expired. Redirecting to login...');
       localStorage.removeItem('token');

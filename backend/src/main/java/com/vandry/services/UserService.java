@@ -36,10 +36,11 @@ public class UserService {
    }
 
    public AuthResponse login(String email, String password) {
+        System.out.println("login for user " + email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("user with this email not found"));
 
-        if(passwordEncoder.matches(password, user.getPassword())) {
+        if(!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("wrong password");
         }
 

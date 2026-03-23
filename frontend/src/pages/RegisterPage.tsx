@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../api/authService';
 
 const RegisterPage = () => {
@@ -7,6 +7,7 @@ const RegisterPage = () => {
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,6 +26,7 @@ const RegisterPage = () => {
         authService.register({ email, password, username })
             .then(response => {
                 console.log("Успішна реєстрація:", response);
+                navigate('/map'); // Після успішної реєстрації перенаправляємо на сторінку логіну
                 
             })
             .catch(error => {
