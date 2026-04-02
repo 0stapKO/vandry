@@ -1,111 +1,140 @@
 import React, {useState} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { authService } from '../api/authService';
 
 const RegisterPage = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [username, setUsername] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!email || !password || !username || !confirmPassword) {
-            alert("Будь ласка, заповни всі поля!");
-            return;
-        }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
-        if (password !== confirmPassword) {
-            alert("Паролі не збігаються!");
-            return;
-        }
-
-        console.log("Дані готові до відправки на Spring Boot:", { email, password, username });
-
-        authService.register({ email, password, username })
-            .then(response => {
-                console.log("Успішна реєстрація:", response);
-                navigate('/map'); // Після успішної реєстрації перенаправляємо на сторінку логіну
-                
-            })
-            .catch(error => {
-                console.error("Помилка реєстрації:", error.response?.data || error.message);
-                alert("Помилка реєстрації. Спробуйте ще раз.");
-            });
+    if (!email || !password || !username || !confirmPassword) {
+      alert("Будь ласка, заповни всі поля!");
+      return;
     }
 
-    return (
-    <div className="flex min-h-screen overflow-y-auto bg-gray-100 lg:h-screen lg:overflow-hidden">
-      {/* Left side: Hero/Image (Hidden on mobile) */}
-      <div className="hidden lg:flex w-1/2 bg-blue-600 items-center justify-center p-10 text-white xl:p-12">
-        <div>
-          <h1 className="text-4xl xl:text-5xl font-bold mb-4 xl:mb-6">Vandry</h1>
-          <p className="text-lg xl:text-xl">Plan your perfect journey with friends in real-time.</p>
-        </div>
-      </div>
+    if (password !== confirmPassword) {
+      alert("Паролі не збігаються!");
+      return;
+    }
 
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
-        <h1 className="lg:hidden text-3xl font-bold text-blue-600 mb-4 text-center">Vandry</h1>
-        <div className="w-[92%] max-w-sm bg-white rounded-2xl shadow-xl p-5 sm:p-6 lg:max-w-md lg:p-7">
-          <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-6 text-center">Welcome</h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-5">
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Username</label>
-                <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="mt-1 block w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    required
-                />
-            </div>
+    setIsLoading(true);
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Email Address</label>
-                <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 block w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    required
-                />
-            </div>
+    console.log("Дані готові до відправки на Spring Boot:", { email, password, username });
 
-             <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    required
-                />
-            </div>
+    try {
+      const data = await authService.register({ email, password, username });
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Confirm password</label>
-                <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="mt-1 block w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    required
-                />
-            </div>
+      const token = data.token;
+      localStorage.setItem("token", token);
 
-            <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md">
-                Sign up
-            </button>
-          </form>
-           <p className="text-sm pt-4 text-gray-800 text-center"
-           >Already have an account? Try to <Link className="text-blue-600 underline" to='/login'>Sign in</Link></p>
-        </div>
+      navigate("/map");
+
+    } catch(err: unknown) {
+      console.error("Помилка при логіні:", err);
+      
+      if (axios.isAxiosError(err)) {
+        const serverMessage = err.response?.data;
+        const message = typeof serverMessage === 'string' 
+          ? serverMessage 
+          : serverMessage?.message || "Неправильний логін або пароль";
+        setError(message);
+      } else {
+        setError("Сталася помилка з'єднання з сервером.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+
+  return (
+  <div className="flex min-h-screen overflow-y-auto bg-gray-100 lg:h-screen lg:overflow-hidden">
+    <div className="hidden lg:flex w-1/2 bg-blue-600 items-center justify-center p-10 text-white xl:p-12">
+      <div>
+        <h1 className="text-4xl xl:text-5xl font-bold mb-4 xl:mb-6">Vandry</h1>
+        <p className="text-lg xl:text-xl">Plan your perfect journey with friends in real-time.</p>
       </div>
     </div>
+
+    <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+      <h1 className="lg:hidden text-3xl font-bold text-blue-600 mb-4 text-center">Vandry</h1>
+      <div className="w-[92%] max-w-sm bg-white rounded-2xl shadow-xl p-5 sm:p-6 lg:max-w-md lg:p-7">
+        <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-6 text-center">Welcome</h2>
+        
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg animate-pulse text-center">
+              {error}
+            </div>
+          )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-5">
+          <div>
+              <label className="block text-sm font-medium text-gray-700">Username</label>
+              <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="mt-1 block w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  required
+              />
+          </div>
+
+          <div>
+              <label className="block text-sm font-medium text-gray-700">Email Address</label>
+              <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 block w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  required
+              />
+          </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 block w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  required
+              />
+          </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Confirm password</label>
+              <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="mt-1 block w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  required
+              />
+          </div>
+
+          <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full py-2.5 rounded-lg font-semibold text-white transition shadow-md ${
+                  isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}>
+                {isLoading ? 'Signing Up...' : 'Sign Up'}
+          </button>
+        </form>
+          <p className="text-sm pt-4 text-gray-800 text-center"
+          >Already have an account? Try to <Link className="text-blue-600 underline" to='/login'>Sign in</Link></p>
+      </div>
+    </div>
+  </div>
   );
 };
 

@@ -1,32 +1,32 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Додав імпорт самого axios для надійності
+import axios from 'axios';
 import { authService } from '../api/authService';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null); // Стан для помилки
-  const [isLoading, setIsLoading] = useState(false); // Стан для завантаження
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null); // Скидаємо попередню помилку
+    setError(null);
   
     if (!email || !password) {
       setError("Будь ласка, заповни всі поля!");
       return;
     }
 
-    setIsLoading(true); // Вмикаємо індикатор завантаження
+    setIsLoading(true);
 
     try {
       console.log("Спроба входу для:", email);
-      const data = await authService.login(email, password);
+      const data = await authService.login({email, password});
       
       const token = data.token;
-      localStorage.setItem('token', token);
+      localStorage.setItem("token", token);
       
       console.log("Токен збережено успішно!");
       navigate('/map'); 
@@ -34,10 +34,8 @@ const LoginPage = () => {
     } catch (err: unknown) {
       console.error("Помилка при логіні:", err);
       
-      // Більш надійна обробка помилки
       if (axios.isAxiosError(err)) {
         const serverMessage = err.response?.data;
-        // Якщо сервер повернув рядок, використовуємо його, якщо об'єкт — витягуємо message
         const message = typeof serverMessage === 'string' 
           ? serverMessage 
           : serverMessage?.message || "Неправильний логін або пароль";
@@ -46,13 +44,13 @@ const LoginPage = () => {
         setError("Сталася помилка з'єднання з сервером.");
       }
     } finally {
-      setIsLoading(false); // Вимикаємо завантаження в будь-якому випадку
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="flex min-h-screen overflow-y-auto bg-gray-100 lg:h-screen lg:overflow-hidden">
-      {/* Ліва частина залишається без змін */}
+      {/* Ліва частина */}
       <div className="hidden lg:flex w-1/2 bg-blue-600 items-center justify-center p-10 text-white">
         <div>
           <h1 className="text-4xl xl:text-5xl font-bold mb-4">Vandry</h1>
@@ -97,7 +95,7 @@ const LoginPage = () => {
 
             <button
                 type="submit"
-                disabled={isLoading} // Деактивуємо кнопку під час запиту
+                disabled={isLoading}
                 className={`w-full py-2.5 rounded-lg font-semibold text-white transition shadow-md ${
                   isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                 }`}>

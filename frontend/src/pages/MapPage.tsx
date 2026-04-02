@@ -1,72 +1,27 @@
-import React, { useState, useEffect } from 'react'; // Додано useEffect
-import { MapContainer, TileLayer, Popup, useMap, Circle, CircleMarker } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import { Search, Settings, LogOut, Menu, X } from 'lucide-react';
-
-// 1. Компонент для зміни вигляду мапи (коли тицяємо на кнопки)
-const ChangeView = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center);
-  }, [center, map]);
-  return null;
-};
-
-// 2. Компонент, який визначає місцезнаходження
-const LocationMarker = () => {
-  const [position, setPosition] = useState<[number, number] | null>(null);
-  const [accuracy, setAccuracy] = useState<number>(0); // Стан для радіуса точності
-  const map = useMap();
-
-  useEffect(() => {
-    map.locate({ enableHighAccuracy: true }).on("locationfound", function (e) {
-      const latlng: [number, number] = [e.latlng.lat, e.latlng.lng];
-      setPosition(latlng);
-      setAccuracy(e.accuracy); // Отримуємо точність у метрах від браузера
-      map.flyTo(e.latlng, 16);
-    });
-  }, [map]);
-
-  if (position === null) return null;
-
-  return (
-    <>
-      {/* 1. Напівпрозоре коло, що показує точність (синій ореол) */}
-      <Circle 
-        center={position} 
-        radius={accuracy} 
-        pathOptions={{ 
-            fillColor: '#3b82f6', 
-            fillOpacity: 0.15, 
-            color: 'transparent' 
-        }} 
-      />
-
-      {/* 2. Сама синя крапка з білою обводкою (як у Google Maps) */}
-      <CircleMarker 
-        center={position} 
-        radius={8} 
-        pathOptions={{ 
-            fillColor: '#3b82f6', 
-            fillOpacity: 1, 
-            color: 'white', 
-            weight: 3 
-        }} 
-      >
-        <Popup>Ти тут! 📍</Popup>
-      </CircleMarker>
-    </>
-  );
-};
+import React, { useState } from 'react';
+import Map, { Marker, NavigationControl, GeolocateControl } from 'react-map-gl';
+import type { ViewStateChangeEvent } from 'react-map-gl'; // Додано "type" спеціально для TS
+import 'mapbox-gl/dist/mapbox-gl.css'; 
+import { Search, Navigation, Users, Settings, LogOut, Menu, X } from 'lucide-react'; // Повернули іконки!
 
 const MapPage = () => {
-  const [position, setPosition] = useState<[number, number]>([49.8397, 24.0297]); // Центр за замовчуванням (Львів)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Координати Львова за замовчуванням
+  const [viewState, setViewState] = useState({
+    longitude: 24.0297,
+    latitude: 49.8397,
+    zoom: 13
+  });
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const handleLocationClick = () => {
-    setPosition([49.8397, 24.0297]);
+    // Змінюємо центр мапи
+    setViewState({
+      longitude: 24.0297,
+      latitude: 49.8397,
+      zoom: 15
+    });
     if (window.innerWidth < 1024) setIsSidebarOpen(false);
   };
 
@@ -81,7 +36,7 @@ const MapPage = () => {
           </button>
       </header>
 
-      {/* Сайдбар */}
+      {/* Сайдбар (UI залишається без змін) */}
       <aside className={`
           fixed inset-y-0 left-0 z-[2000] w-[90%] max-w-sm bg-white border-r border-gray-100 
           flex flex-col transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
@@ -133,20 +88,26 @@ const MapPage = () => {
         <div onClick={toggleSidebar} className="fixed inset-0 bg-black/40 z-[1999] lg:hidden"></div>
       )}
 
-      {/* Власне Мапа */}
-      <MapContainer center={position} zoom={13} className="h-full w-full z-0 lg:z-auto" zoomControl={false}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap contributors'
-        />
-        
-        {/* Керування центром мапи */}
-        <ChangeView center={position} />
-        
-        {/* Автоматичне визначення локації */}
-        <LocationMarker />
-    
-      </MapContainer>
+      {/* Власне Mapbox Мапа */}
+      <div className="h-full w-full z-0 lg:z-auto">
+        <Map
+          {...viewState}
+          onMove={(evt: ViewStateChangeEvent) => setViewState(evt.viewState)}
+          onLoad={(evt) => evt.target.setLanguage('local')}
+          mapStyle="mapbox://styles/mapbox/streets-v12"
+          mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+          style={{ width: '100%', height: '100%' }}
+        >
+          {/* Вбудована кнопка геолокації (сама знайде юзера і намалює синю крапку) */}
+          <GeolocateControl position="top-right" trackUserLocation={true} showAccuracyCircle={true} />
+          
+          {/* Кнопки зуму та повороту мапи */}
+          <NavigationControl position="top-right" />
+          
+          {/* Приклад маркера */}
+          <Marker longitude={24.0297} latitude={49.8397} color="red" />
+        </Map>
+      </div>
     </div>
   );
 };

@@ -20,19 +20,20 @@ public class UserService {
         this.jwtService = jwtService;
     }
 
-   public User registerNewUser(RegisterRequest registerRequest) {
+   public AuthResponse registerNewUser(RegisterRequest registerRequest) {
         if(userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
             throw new RuntimeException("user already exists");
         }
 
+        String passwordEncrypted = passwordEncoder.encode(registerRequest.getPassword());
+
         User user = new User();
         user.setEmail(registerRequest.getEmail());
         user.setUsername(registerRequest.getUsername());
-
-        String passwordEncrypted = passwordEncoder.encode(registerRequest.getPassword());
         user.setPassword(passwordEncrypted);
 
-        return userRepository.save(user);
+        String token = jwtService.generateToken(registerRequest.getEmail());
+        return new AuthResponse(token);
    }
 
    public AuthResponse login(String email, String password) {

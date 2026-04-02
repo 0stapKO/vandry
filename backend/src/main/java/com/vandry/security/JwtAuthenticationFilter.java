@@ -22,6 +22,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        return request.getServletPath().startsWith("/api/auth");
+    }
+
+    @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
@@ -32,32 +37,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt;
         final String userEmail;
 
-        // 1. Перевіряємо, чи є заголовок Authorization і чи він починається з "Bearer "
+        // 1. Check if Authorization header exists and starts with "Bearer "
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
-        userEmail = jwtService.extractEmail(jwt); // Витягуємо емейл з токена
+        try {
+            jwt = authHeader.substring(7);
+            userEmail = jwtService.extractEmail(jwt); // Extract email from token
 
-        // 2. Якщо емейл є і користувач ще не авторизований у поточному контексті
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // 2. If email exists and user is not authenticated yet in the current context
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // Тут ми перевіряємо валідність токена
-            if (jwtService.isTokenValid(jwt, userEmail)) {
-                // Створюємо об'єкт аутентифікації
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userEmail,
-                        null,
-                        new ArrayList<>() // Поки що порожній список ролей
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                // Validate the token
+                if (jwtService.isTokenValid(jwt, userEmail)) {
+                    // Create authentication token
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userEmail,
+                            null,
+                            new ArrayList<>() // Empty roles list for now
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // Оновлюємо SecurityContext, тепер Spring знає, що користувач "свій"
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    // Update SecurityContext
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // Catch ExpiredJwtException or any other token parsing errors
+            // We just log it or ignore, letting the request continue as unauthenticated
+            System.out.println("Token validation failed: " + e.getMessage());
         }
+
+        // Pass to the next filter
         filterChain.doFilter(request, response);
     }
 }

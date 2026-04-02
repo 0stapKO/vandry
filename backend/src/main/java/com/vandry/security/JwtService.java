@@ -16,7 +16,6 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    // IMPORTANT: This must be a valid Base64 string (at least 256-bit)
     private static final String SECRET_KEY = "Z2VuZXJhdGVkLWJhc2U2NC1zZWNyZXQta2V5LWZvci12YW5kcnktcHJvamVjdC1tdXN0LWJlLWxvbmc=";
 
     public String generateToken(String email) {
@@ -50,7 +49,6 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // Generic method to extract any claim from the token
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);

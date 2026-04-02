@@ -1,8 +1,12 @@
 import api from './axios';
 
-// Interfaces for our data (similar to DTOs in Java)
 interface RegisterRequest {
     username: string;
+    email: string;
+    password: string;
+}
+
+interface LoginRequest {
     email: string;
     password: string;
 }
@@ -13,8 +17,8 @@ export const authService = {
         return response.data;
     },
     
-    login: async (email: string, password: string) => {
-        const response = await api.post('/auth/login', { email, password });
-        return response.data; // Here we expect to get our JWT token
+    login: async (data: LoginRequest) => {
+        const response = await api.post('/auth/login', data);
+        return response.data;
     }
 };
