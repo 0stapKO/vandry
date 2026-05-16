@@ -37,7 +37,7 @@ public class SecurityConfig {
 
                 // 3. Відкриваємо доступ до реєстрації та логіну всім, решту — за токеном
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/route/public/**").permitAll()
                         .anyRequest().authenticated()
                 )
 

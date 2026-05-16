@@ -23,6 +23,18 @@ public class RoutePoint {
     @Column(nullable = false)
     private Integer sequenceOrder;
 
+    @Column
+    private String placeId;
+
+    @Column
+    private String name;
+
+    @Column
+    private String address;
+
+    @Column
+    private String category;
+
     @ManyToOne
     @JoinColumn(nullable = false, name = "route_id")
     private Route route;
