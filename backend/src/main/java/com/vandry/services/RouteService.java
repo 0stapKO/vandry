@@ -39,23 +39,17 @@ public class RouteService {
     @Transactional
     public Route saveRoute(RouteRequest request, String authHeader) {
         User author = getUserFromToken(authHeader);
-
-        // 1. Map DTO to Route Entity
         Route route = new Route();
-        route.setName(request.getName()); // React "title" -> Entity "name"
-
-        // Convert string like "driving" to enum DRIVING
+        route.setName(request.getName());
         route.setMode(Mode.valueOf(request.getTransportMode().toUpperCase()));
         route.setDistance(request.getDistance());
         route.setDuration(request.getDuration());
-        route.setAuthor(author); // Entity uses "author" instead of "user"
+        route.setAuthor(author);
         route.setDescription(request.getDescription());
 
-        // 2. Map stops from DTO to RoutePoint Entities
         if (request.getStops() != null) {
             List<RoutePoint> points = request.getStops().stream().map(dto -> {
                 RoutePoint point = new RoutePoint();
-                // Make sure your RoutePoint entity has these setters!
                 point.setPlaceId(dto.getPlaceId());
                 point.setName(dto.getName());
                 point.setAddress(dto.getAddress());
@@ -64,14 +58,13 @@ public class RouteService {
                 point.setLatitude(dto.getLatitude());
                 point.setSequenceOrder(dto.getStopOrder());
 
-                point.setRoute(route); // Bidirectional relationship
+                point.setRoute(route);
                 return point;
             }).collect(Collectors.toList());
 
-            route.setRoutePoints(points); // Entity uses "routePoints"
+            route.setRoutePoints(points);
         }
 
-        // 3. Save to database
         return routeRepository.save(route);
     }
 
@@ -79,26 +72,21 @@ public class RouteService {
     public Route updateRoute(Long routeId, RouteRequest request, String authHeader) {
         User author = getUserFromToken(authHeader);
 
-        // Знаходимо існуючий маршрут
         Route route = routeRepository.findById(routeId)
                 .orElseThrow(() -> new RuntimeException("Маршрут не знайдено"));
 
-        // Перевіряємо, чи він належить цьому користувачу
         if (!route.getAuthor().getId().equals(author.getId())) {
             throw new RuntimeException("У вас немає доступу до цього маршруту");
         }
 
-        // 1. Оновлюємо базові дані
-        route.setName(request.getName()); // або getTitle(), залежно від твого DTO
+        route.setName(request.getName());
         route.setMode(Mode.valueOf(request.getTransportMode().toUpperCase()));
         route.setDistance(request.getDistance());
         route.setDuration(request.getDuration());
         route.setDescription(request.getDescription());
 
-        // 2. Очищаємо старі точки
         route.getRoutePoints().clear();
 
-        // 3. Додаємо нові точки
         if (request.getStops() != null) {
             List<RoutePoint> newPoints = request.getStops().stream().map(dto -> {
                 RoutePoint point = new RoutePoint();
@@ -109,7 +97,7 @@ public class RouteService {
                 point.setLongitude(dto.getLongitude());
                 point.setLatitude(dto.getLatitude());
                 point.setSequenceOrder(dto.getStopOrder());
-                point.setRoute(route); // Відновлюємо зв'язок
+                point.setRoute(route);
                 return point;
             }).collect(Collectors.toList());
 
@@ -126,7 +114,6 @@ public class RouteService {
         Route route = routeRepository.findById(routeId)
                 .orElseThrow(() -> new RuntimeException("Маршрут не знайдено"));
 
-        // Перевіряємо, чи маршрут належить тому, хто його намагається видалити
         if (!route.getAuthor().getId().equals(author.getId())) {
             throw new RuntimeException("У вас немає доступу до цього маршруту");
         }
@@ -153,7 +140,6 @@ public class RouteService {
         }
 
         String token = authHeader.substring(7);
-        // Corrected method name to match your JwtService
         String email = jwtService.extractEmail(token);
 
         return userRepository.findByEmail(email)

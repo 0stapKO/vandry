@@ -22,22 +22,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
         return request.getServletPath().startsWith("/api/auth");
     }
 
     @Override
-    protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
 
-        // 1. Check if Authorization header exists and starts with "Bearer "
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -45,32 +40,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             jwt = authHeader.substring(7);
-            userEmail = jwtService.extractEmail(jwt); // Extract email from token
-
-            // 2. If email exists and user is not authenticated yet in the current context
+            userEmail = jwtService.extractEmail(jwt);
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-                // Validate the token
                 if (jwtService.isTokenValid(jwt, userEmail)) {
-                    // Create authentication token
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userEmail,
-                            null,
-                            new ArrayList<>() // Empty roles list for now
-                    );
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userEmail,
+                                                                                null, new ArrayList<>());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    // Update SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
         } catch (Exception e) {
-            // Catch ExpiredJwtException or any other token parsing errors
-            // We just log it or ignore, letting the request continue as unauthenticated
             System.out.println("Token validation failed: " + e.getMessage());
         }
-
-        // Pass to the next filter
         filterChain.doFilter(request, response);
     }
 }

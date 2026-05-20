@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast'; // 🚀 Додали імпорт
+import { Toaster } from 'react-hot-toast';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MapPage from './pages/MapPage';
@@ -9,7 +9,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   return (
     <BrowserRouter>
-      {/* 🚀 Додали Toaster (він невидимий, поки його не викличуть) */}
       <Toaster 
         position="top-center" 
         toastOptions={{

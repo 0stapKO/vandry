@@ -21,9 +21,9 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
-    private final UserService userService; // Inject UserService
+    private final UserService userService;
 
-    @GetMapping("/me")
+    @GetMapping
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
         try {
             String token = authHeader.substring(7);
@@ -35,7 +35,6 @@ public class UserController {
             Map<String, Object> profileInfo = new HashMap<>();
             profileInfo.put("id", user.getId());
             profileInfo.put("email", user.getEmail());
-            // Return actual username from database
             profileInfo.put("username", user.getUsername());
             profileInfo.put("role", user.getRole().name());
 
@@ -46,14 +45,13 @@ public class UserController {
         }
     }
 
-    @PutMapping("/me")
+    @PutMapping
     public ResponseEntity<?> updateProfile(@RequestHeader("Authorization") String authHeader,
                                            @RequestBody UpdateProfileRequest request) {
         try {
             String token = authHeader.substring(7);
             String email = jwtService.extractEmail(token);
 
-            // Delegate logic to service layer
             userService.updateUserProfile(email, request);
 
             return ResponseEntity.ok(Map.of("message", "Профіль успішно оновлено"));

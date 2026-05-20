@@ -1,40 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Mail, ArrowLeft, LogOut, Map as MapIcon, Navigation, Clock, Save, Edit2, Trash2, X } from 'lucide-react';
+import { formatCount, formatDuration } from '../utils/formatters';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-
-  const formatCount = (value: number, one: string, few: string, many: string) => {
-    const mod10 = value % 10;
-    const mod100 = value % 100;
-
-    if (mod10 === 1 && mod100 !== 11) return `${value} ${one}`;
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${value} ${few}`;
-    return `${value} ${many}`;
-  };
-
-  const formatDuration = (seconds: number) => {
-    const totalMinutes = Math.round(seconds / 60);
-    if (totalMinutes >= 60) {
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      const hoursText = formatCount(hours, 'година', 'години', 'годин');
-      if (minutes > 0) {
-        const minutesText = formatCount(minutes, 'хвилина', 'хвилини', 'хвилин');
-        return `${hoursText} ${minutesText}`;
-      }
-      return hoursText;
-    }
-    return formatCount(totalMinutes, 'хвилина', 'хвилини', 'хвилин');
-  };
 
   // User State
   const [profile, setProfile] = useState({ username: '', email: '' });
   const [myRoutes, setMyRoutes] = useState<any[]>([]);
   
   // UI State
-  const [isEditing, setIsEditing] = useState(false); // 🚀 НОВИЙ СТАН ДЛЯ ПЕРЕМИКАННЯ ФОРМИ
+  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -54,7 +31,7 @@ const ProfilePage = () => {
     if (!token) return navigate('/login');
 
     try {
-      const response = await fetch('http://localhost:8080/api/user/me', {
+      const response = await fetch('http://localhost:8080/api/user', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -103,7 +80,7 @@ const ProfilePage = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/user/me', {
+      const response = await fetch('http://localhost:8080/api/user', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +97,7 @@ const ProfilePage = () => {
         setOldPassword('');
         setNewPassword('');
         setConfirmPassword('');
-        setIsEditing(false); // 🚀 Вимикаємо режим редагування після успіху
+        setIsEditing(false);
       } else {
         setMessage({ type: 'error', text: data.error || 'Помилка оновлення' });
       }
@@ -129,9 +106,8 @@ const ProfilePage = () => {
     }
   };
 
-  // 🚀 НОВА ФУНКЦІЯ: ВИДАЛЕННЯ МАРШРУТУ
   const handleDeleteRoute = async (e: React.MouseEvent, routeId: number) => {
-    e.stopPropagation(); // Зупиняємо клік, щоб не відкрився маршрут
+    e.stopPropagation(); 
     
     if (!window.confirm("Ви впевнені, що хочете видалити цей маршрут? Цю дію неможливо скасувати.")) {
       return;
@@ -145,7 +121,6 @@ const ProfilePage = () => {
       });
 
       if (response.ok) {
-        // Оновлюємо стан, залишаючи тільки ті маршрути, які не були видалені
         setMyRoutes(myRoutes.filter(route => route.id !== routeId));
       } else {
         alert("Помилка при видаленні маршруту.");
@@ -170,7 +145,6 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
-      {/* Top Navigation */}
       <div className="w-full max-w-5xl flex justify-between items-center mb-8">
         <button 
           onClick={() => navigate('/map')}
@@ -187,8 +161,6 @@ const ProfilePage = () => {
       </div>
 
       <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Left Column: Profile Info / Settings Form */}
         <div className="md:col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 h-fit transition-all">
           <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4 mx-auto shadow-inner">
             <User size={40} className="text-blue-600" />
@@ -202,7 +174,6 @@ const ProfilePage = () => {
           )}
 
           {!isEditing ? (
-            // 🚀 РЕЖИМ ПЕРЕГЛЯДУ (READ-ONLY)
             <div className="space-y-6">
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Ім'я користувача</p>
@@ -215,7 +186,7 @@ const ProfilePage = () => {
               <button 
                 onClick={() => {
                   setIsEditing(true);
-                  setMessage({ type: '', text: '' }); // Очищаємо повідомлення
+                  setMessage({ type: '', text: '' });
                 }}
                 className="w-full py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition shadow-sm mt-4"
               >
@@ -223,7 +194,6 @@ const ProfilePage = () => {
               </button>
             </div>
           ) : (
-            // 🚀 РЕЖИМ РЕДАГУВАННЯ (ФОРМА)
             <form onSubmit={handleUpdateProfile} className="space-y-4 animate-in fade-in zoom-in duration-200">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
@@ -304,7 +274,7 @@ const ProfilePage = () => {
                   type="button"
                   onClick={() => {
                     setIsEditing(false);
-                    setNewUsername(profile.username); // Скидаємо ім'я
+                    setNewUsername(profile.username);
                     setOldPassword('');
                     setNewPassword('');
                     setConfirmPassword('');
@@ -319,7 +289,6 @@ const ProfilePage = () => {
           )}
         </div>
 
-        {/* Right Column: User's Routes */}
         <div className="md:col-span-2">
           <h2 className="text-2xl font-black text-gray-800 mb-6 flex items-center gap-2">
             <MapIcon className="text-blue-600" /> Мої збережені маршрути
@@ -347,7 +316,6 @@ const ProfilePage = () => {
                   onClick={() => openRouteOnMap(route.id)}
                   className="relative bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-400 hover:shadow-md transition group overflow-hidden"
                 >
-                  {/* 🚀 КНОПКА ВИДАЛЕННЯ НА КАРТЦІ */}
                   <button
                     onClick={(e) => handleDeleteRoute(e, route.id)}
                     className="absolute top-3 right-3 p-2 bg-red-50 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10"

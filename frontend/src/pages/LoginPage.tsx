@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { authService } from '../api/authService';
+import { AuthBanner } from '../components/common/AuthBanner';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -51,17 +52,12 @@ const LoginPage = () => {
   return (
     <div className="flex min-h-screen overflow-y-auto bg-gray-100 lg:h-screen lg:overflow-hidden">
       {/* Ліва частина */}
-      <div className="hidden lg:flex w-1/2 bg-blue-600 items-center justify-center p-10 text-white">
-        <div>
-          <h1 className="text-4xl xl:text-5xl font-bold mb-4">Vandry</h1>
-          <p className="text-lg xl:text-xl">Plan your perfect journey with friends in real-time.</p>
-        </div>
-      </div>
+      <AuthBanner/>
 
       {/* Форма */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4">
         <div className="w-[92%] max-w-sm bg-white rounded-2xl shadow-xl p-6 lg:max-w-md">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Welcome Back</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">З поверненням!</h2>
           
           {/* Блок для виведення помилки (червоний алерт) */}
           {error && (
@@ -72,7 +68,7 @@ const LoginPage = () => {
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
                 <input
                     type="email"
                     value={email}
@@ -83,7 +79,7 @@ const LoginPage = () => {
             </div>
 
              <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label className="block text-sm font-medium text-gray-700">Пароль</label>
               <input
                 type="password"
                 value={password}
@@ -99,12 +95,12 @@ const LoginPage = () => {
                 className={`w-full py-2.5 rounded-lg font-semibold text-white transition shadow-md ${
                   isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                 }`}>
-                {isLoading ? 'Signing In...' : 'Sign In'}
+                {isLoading ? 'Вхід...' : 'Ввійти'}
             </button>
           </form>
 
           <p className="text-sm pt-4 text-gray-800 text-center">
-            New here? Try to <Link className="text-blue-600 underline" to='/register'>Sign up</Link>
+           Вперше тут? Спробуйте <Link className="text-blue-600 underline" to='/register'>Зареєструватися</Link>
           </p>
         </div>
       </div>

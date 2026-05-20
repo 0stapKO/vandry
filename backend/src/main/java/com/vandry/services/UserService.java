@@ -22,7 +22,7 @@ public class UserService {
 
    public AuthResponse registerNewUser(RegisterRequest registerRequest) {
         if(userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            throw new RuntimeException("user already exists");
+            throw new RuntimeException("Користувач з такою поштою вже існує");
         }
 
         String passwordEncrypted = passwordEncoder.encode(registerRequest.getPassword());
@@ -39,12 +39,11 @@ public class UserService {
    }
 
    public AuthResponse login(String email, String password) {
-        System.out.println("login for user " + email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("user with this email not found"));
+                .orElseThrow(() -> new RuntimeException("Користувача з такою поштою не знайдено"));
 
         if(!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("wrong password");
+            throw new RuntimeException("Неправильний пароль");
         }
 
         String token = jwtService.generateToken(user.getEmail());
@@ -53,20 +52,16 @@ public class UserService {
 
     public void updateUserProfile(String email, com.vandry.dto.UpdateProfileRequest request) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Користувача нпе знайдено"));
 
-        // 1. Update username if it is provided and not empty
         if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
             user.setUsername(request.getUsername().trim());
         }
 
-        // 2. Update password if requested
         if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
-            // Verify old password first
             if (request.getOldPassword() == null || !passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-                throw new RuntimeException("Невірний поточний пароль");
+                throw new RuntimeException("Неправтльний поточний пароль");
             }
-            // Hash and set new password
             user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         }
 

@@ -5,7 +5,6 @@ import java.util.List;
 
 @Data
 public class RouteRequest {
-    // These fields exactly match the JSON sent from React
     private String name;
     private String transportMode;
     private Double distance;

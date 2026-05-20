@@ -4,12 +4,16 @@ import com.vandry.dto.RoutePointRequest;
 import com.vandry.dto.RouteRequest;
 import com.vandry.dto.RouteResponse;
 import com.vandry.entities.Route;
+import com.vandry.entities.RoutePoint;
 import com.vandry.repositories.RouteRepository;
+import com.vandry.services.MapboxService;
+import com.vandry.services.RouteOptimizationService;
 import com.vandry.services.RouteService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,9 +25,13 @@ import java.util.stream.Collectors;
 public class RouteController {
 
     private final RouteService routeService;
+    private final MapboxService mapboxService;
+    private final RouteOptimizationService optimizationService;
 
-    public RouteController(RouteService routeService) {
+    public RouteController(RouteService routeService, MapboxService mapboxService, RouteOptimizationService optimizationService) {
         this.routeService = routeService;
+        this.mapboxService = mapboxService;
+        this.optimizationService = optimizationService;
     }
 
     @PostMapping
@@ -83,7 +91,7 @@ public class RouteController {
             dto.setIsBuiltIn(route.getIsBuiltIn());
             System.out.println("ISBUILTIN");
             System.out.println(route.getIsBuiltIn());
-            // Конвертуємо точки бази даних у DTO
+            
             List<RoutePointRequest> stops = route.getRoutePoints().stream().map(p -> {
                 RoutePointRequest sp = new RoutePointRequest();
                 sp.setPlaceId(p.getPlaceId());
@@ -96,7 +104,6 @@ public class RouteController {
                 return sp;
             }).collect(Collectors.toList());
 
-            // Важливо: сортуємо точки за порядком (stopOrder), щоб лінія будувалася правильно
             stops.sort((a, b) -> a.getStopOrder().compareTo(b.getStopOrder()));
 
             dto.setStops(stops);
@@ -124,10 +131,8 @@ public class RouteController {
     @GetMapping("/built-in")
     public ResponseEntity<?> getBuiltInRoutes() {
         try {
-            // Звертаємось напряму до репозиторію (або можеш винести це в RouteService)
             List<Route> builtInRoutes = routeService.getBuiltInRoutes();
 
-            // Пакуємо в наші знайомі DTO
             List<RouteResponse> responses = builtInRoutes.stream().map(route -> {
                 RouteResponse dto = new RouteResponse();
                 dto.setId(route.getId());
@@ -160,10 +165,8 @@ public class RouteController {
     @GetMapping("/public/{id}")
     public ResponseEntity<?> getPublicRouteById(@PathVariable Long id) {
         try {
-            // Use service instead of repository
             Route route = routeService.getPublicRouteById(id);
 
-            // Use proper DTO instead of HashMap
             RouteResponse dto = new RouteResponse();
             dto.setId(route.getId());
             dto.setName(route.getName());
@@ -174,7 +177,6 @@ public class RouteController {
             dto.setDescription(route.getDescription());
             dto.setIsBuiltIn(route.getIsBuiltIn());
 
-            // Convert DB points to DTOs
             List<RoutePointRequest> stops = route.getRoutePoints().stream().map(p -> {
                 RoutePointRequest sp = new RoutePointRequest();
                 sp.setPlaceId(p.getPlaceId());
@@ -187,7 +189,6 @@ public class RouteController {
                 return sp;
             }).collect(Collectors.toList());
 
-            // Sort stops by order to ensure correct line drawing
             stops.sort((a, b) -> a.getStopOrder().compareTo(b.getStopOrder()));
 
             dto.setStops(stops);
@@ -196,5 +197,26 @@ public class RouteController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @PostMapping("/optimize")
+    public ResponseEntity<List<RoutePoint>> optimizeRoute(
+            @RequestBody List<RoutePoint> stops,
+            @RequestParam(defaultValue = "false") boolean fixDestination) {
+
+        if (stops == null || stops.size() < 3) {
+            return ResponseEntity.ok(stops);
+        }
+
+        double[][] durationMatrix = mapboxService.getDurationMatrix(stops);
+
+        int[] optimalIndices = optimizationService.findOptimalPath(durationMatrix, fixDestination);
+
+        List<RoutePoint> optimizedStops = new ArrayList<>();
+        for (int index : optimalIndices) {
+            optimizedStops.add(stops.get(index));
+        }
+
+        return ResponseEntity.ok(optimizedStops);
     }
 }
